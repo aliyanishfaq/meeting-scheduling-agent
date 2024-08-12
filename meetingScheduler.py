@@ -67,7 +67,7 @@ class MeetingScheduler:
             session_id=sessionId
         )
         print(retrieve_response.data)
-        self.busy_times = retrieve_response.data
+        self.available_times = retrieve_response.data
 
     def schedule_meeting(self):
         meeting_session = self.client.sessions.create(
@@ -76,12 +76,12 @@ class MeetingScheduler:
         )
         sessionId = meeting_session.session_id
         browse_response = self.client.browse(
-            cmd=f"""Create me a meeting with the title 'Aliyan <> {self.sender_name}'. For guests, add aliyanishfaq200@gmail.com. Remember to click on Add Google Meet video conferencing. Schedule a meeting for the time that doesn't conflict with the following times: {self.busy_times} and is preferably in the afternoon.""",
+            cmd=f"""Create me a meeting with the title 'Aliyan <> {self.sender_name}'. For guests, add aliyanishfaq200@gmail.com. Schedule a meeting for the time that is among the available times: {self.available_times} and is preferably in the afternoon. Do not press the Google Meet Conferencing button  and Save button yet.""",
             session_id=sessionId,
             local=True
         )
         meets_response = self.client.browse(
-            cmd=f"""Click on the Google Meet Conferencing button. The button's HTML is <span jsname="V67aGc" class="VfPpkd-vQzf8d">Add Google Meet video conferencing</span>""",
+            cmd=f"""Click on the Google Meet Conferencing button just once. The button's HTML is <span jsname="V67aGc" class="VfPpkd-vQzf8d">Add Google Meet video conferencing</span>""",
             session_id=sessionId,
             local=True
         )
