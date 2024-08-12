@@ -18,11 +18,11 @@ class MeetingScheduler:
         self.email_body = ""
     
     def meeting_request_search(self):
-        create_session = self.client.sessions.create(
+        meeting_session = self.client.sessions.create(
             url="https://mail.google.com/mail/u/0/#inbox",
             local=True
         )
-        sessionId = create_session.session_id
+        sessionId = meeting_session.session_id
         browse_response = self.client.browse(
             cmd="Search the email page for the latest email asking me to schedule meeting or meet and then open that email by clicking on it.",
             session_id=sessionId,
@@ -46,7 +46,56 @@ class MeetingScheduler:
 
         self.email_received_time = json_data["email_received_time"] if "email_received_time" in json_data else None
         self.email_body = json_data["body"] if "body" in json_data else None
+
+        self.client.sessions.close(
+            session_id=sessionId
+        )
     
+    def get_calendar_availability(self):
+        calendar_session = self.client.sessions.create(
+            url="https://calendar.google.com/calendar/u/0/r",
+            local=True
+        )
+        sessionId = calendar_session.session_id
+        retrieve_response = self.client.retrieve(
+            cmd="Get all the times I am free on 12th August 2024. So give me start time and end time for all the times I am free.",
+            fields=["name", "start time", "end time"],
+            session_id=sessionId,
+            local=True
+        )
+        self.client.sessions.close(
+            session_id=sessionId
+        )
+        print(retrieve_response.data)
+        self.busy_times = retrieve_response.data
+
+    def schedule_meeting(self):
+        meeting_session = self.client.sessions.create(
+            url="https://calendar.google.com/calendar/u/0/r/eventedit",
+            local=True
+        )
+        sessionId = meeting_session.session_id
+        browse_response = self.client.browse(
+            cmd=f"""Create me a meeting with the title 'Aliyan <> {self.sender_name}'. For guests, add aliyanishfaq200@gmail.com. Remember to click on Add Google Meet video conferencing. Schedule a meeting for the time that doesn't conflict with the following times: {self.busy_times} and is preferably in the afternoon.""",
+            session_id=sessionId,
+            local=True
+        )
+        meets_response = self.client.browse(
+            cmd=f"""Click on the Google Meet Conferencing button. The button's HTML is <span jsname="V67aGc" class="VfPpkd-vQzf8d">Add Google Meet video conferencing</span>""",
+            session_id=sessionId,
+            local=True
+        )
+        save_response = self.client.browse(
+            cmd=f"""Click the Save button. The button's HTML is <span jsname="V67aGc" class="VfPpkd-vQzf8d">Save</span> if is displayed on the screen""",
+            session_id=sessionId,
+            local=True
+        )
+
+        self.client.sessions.close(
+            session_id=sessionId
+        )
+
+
     def is_email_address(self, email_address):
         # Simple email validation regex
         return re.match(r"[^@]+@[^@]+\.[^@]+", email_address) is not None
@@ -54,11 +103,5 @@ class MeetingScheduler:
 
 meeting_scheduler = MeetingScheduler()
 meeting_scheduler.meeting_request_search()
-
-print(meeting_scheduler.email_address)
-print(meeting_scheduler.sender_name)
-print(meeting_scheduler.email_received_time)
-print(meeting_scheduler.email_body)
-
-
-        
+meeting_scheduler.get_calendar_availability()
+meeting_scheduler.schedule_meeting()
